@@ -47,9 +47,32 @@ async function getUsers(email, password) {
   }
 }
 
+async function getEmployee() {
+  try {
+    const res = await pool.query("SELECT * FROM employees");
+    return res.rows;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 async function getServices() {
   try {
     const res = await pool.query("SELECT * FROM services");
+    return res.rows;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function getServicesSpecify(id) {
+  try {
+    const res = await pool.query(`
+      SELECT s.id, s.name, s.description, s.price
+      FROM employee_services es
+      JOIN services s ON es.service_id = s.id
+      WHERE es.employee_id = ${id};
+`);
     return res.rows;
   } catch (err) {
     console.error(err);
@@ -65,6 +88,17 @@ async function registerUser(name, email, password, phone) {
       `INSERT INTO users (name, email, password_hash, phone) VALUES ($1, $2, $3, $4)`,
       [name, email, password_hash, phone]
     );
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function registerEmployee(name, phone) {
+  try {
+    await pool.query(`INSERT INTO employee ("name", "phone") VALUES ($1, $2)`, [
+      name,
+      phone,
+    ]);
   } catch (err) {
     console.error(err);
   }
@@ -110,8 +144,19 @@ app.post("/getUser", async (req, res) => {
   }
 });
 
+app.get("/getEmployees", async (req, res) => {
+  const employee = await getEmployee();
+  res.json(employee);
+});
+
 app.get("/getServices", async (req, res) => {
   const services = await getServices();
+  res.json(services);
+});
+
+app.post("/getServicesSpecify", async (req, res) => {
+  const { id } = req.body;
+  const services = await getServicesSpecify(id);
   res.json(services);
 });
 
@@ -123,6 +168,14 @@ app.post("/registerUser", async (req, res) => {
     .send(
       `User is register on the system, ${name} número de telefone é ${phone}`
     );
+});
+
+app.post("/registerEmployee", async (req, res) => {
+  const { name, phone } = req.body;
+  await registerService(name, phone);
+  res
+    .status(201)
+    .send(`Employee is register on the system, ${name} com o número ${phone}`);
 });
 
 app.post("/registerService", async (req, res) => {
