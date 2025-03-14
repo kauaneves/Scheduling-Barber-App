@@ -68,11 +68,20 @@ async function getServices() {
 async function getServicesSpecify(id) {
   try {
     const res = await pool.query(`
-      SELECT s.id, s.name, s.description, s.price
+      SELECT s.id, s.name, s.description, s.price, s.duration
       FROM employee_services es
       JOIN services s ON es.service_id = s.id
       WHERE es.employee_id = ${id};
 `);
+    return res.rows;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function getAppointments() {
+  try {
+    const res = await pool.query("SELECT * FROM appointments");
     return res.rows;
   } catch (err) {
     console.error(err);
@@ -109,6 +118,23 @@ async function registerService(name, description, price) {
     await pool.query(
       `INSERT INTO services ("name", "description", "price") VALUES ($1, $2, $3)`,
       [name, description, price]
+    );
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function registerAppointments(
+  user_id,
+  service_id,
+  employee_id,
+  appointment_time
+) {
+  try {
+    await pool.query(
+      `INSERT INTO appointments (user_id, service_id, employee_id, appointment_time) 
+       VALUES ($1, $2, $3, $4)`,
+      [user_id, service_id, employee_id, appointment_time]
     );
   } catch (err) {
     console.error(err);
@@ -160,6 +186,11 @@ app.post("/getServicesSpecify", async (req, res) => {
   res.json(services);
 });
 
+app.get("/getAppointments", async (req, res) => {
+  const services = await getAppointments();
+  res.json(services);
+});
+
 app.post("/registerUser", async (req, res) => {
   const { name, email, password, phone } = req.body;
   await registerUser(name, email, password, phone);
@@ -186,6 +217,17 @@ app.post("/registerService", async (req, res) => {
     .send(
       `Service is register on the system, ${name} com a descrição ${description} com o preço de R$${price}`
     );
+});
+
+app.post("/registerAppointment", async (req, res) => {
+  const { user_id, service_id, employee_id, appointment_time } = req.body;
+  await registerAppointments(
+    user_id,
+    service_id,
+    employee_id,
+    appointment_time
+  );
+  res.status(201).send(`Agendamento Realizado.`);
 });
 
 app.get("/verifyToken", (req, res, next) => {
