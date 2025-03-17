@@ -148,9 +148,15 @@ app.get("/", async (req, res) => {
 app.post("/getUser", async (req, res) => {
   const { email, password } = req.body;
   const user = await getUsers(email, password);
+  console.log(user.id);
   if (user) {
     const token = jwt.sign(
-      { phone: user.phone, email: user.email, name: user.name },
+      {
+        phone: user.phone,
+        email: user.email,
+        name: user.name,
+        user_id: user.id,
+      },
       SECRET_KEY,
       { expiresIn: "1h" }
     );
