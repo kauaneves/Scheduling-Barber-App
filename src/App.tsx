@@ -3,6 +3,7 @@ import Header from "./components/header";
 import Service from "./components/service";
 import Contact from "./components/contact";
 import Logo from "./assets/Logo.svg";
+import "react-toastify/dist/ReactToastify.css";
 import { useQuery } from "@tanstack/react-query";
 
 interface DataProps {

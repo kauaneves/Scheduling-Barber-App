@@ -5,6 +5,7 @@ import { MdOutlinePhoneAndroid } from "react-icons/md";
 import { HiIdentification } from "react-icons/hi2";
 import Logo from "../assets/Logo.svg";
 import { useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function Login() {
   const [name, setName] = useState("");
@@ -30,10 +31,10 @@ export default function Login() {
         });
         window.location.href = "/";
       } else {
-        alert("As senhas não são semelhantes.");
+        toast.error("As senhas não são semelhantes.");
       }
     } else {
-      alert("Email inserido de forma inválida.");
+      toast.error("Email inserido de forma inválida.");
     }
   }
 
@@ -41,6 +42,7 @@ export default function Login() {
     <div className="bg-gray-200">
       <Header />
       <div className="flex">
+        <ToastContainer autoClose={1500} />
         <img
           className="mt-10 hidden md:block lg:w-[550px] mx-10 md:w-[350px]"
           src={Logo}

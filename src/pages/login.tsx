@@ -3,6 +3,7 @@ import Header from "../components/header";
 import { MdEmail } from "react-icons/md";
 import Logo from "../assets/Logo.svg";
 import { useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -20,10 +21,10 @@ export default function Login() {
       if (data.status) {
         window.location.href = "/";
       } else {
-        alert("Email ou Senha incorreto.");
+        toast.error("Email ou Senha incorreto.");
       }
     } else {
-      alert("Informações inseridas incorretamente");
+      toast.error("Informações inseridas incorretamente");
     }
   }
 
@@ -31,6 +32,7 @@ export default function Login() {
     <div className="bg-gray-200">
       <Header />
       <div className="flex">
+        <ToastContainer autoClose={1500} />
         <img
           className="mt-10 hidden md:block lg:w-[550px] mx-10 md:w-[350px]"
           src={Logo}
