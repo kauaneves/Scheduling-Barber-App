@@ -6,26 +6,29 @@ import { ImScissors } from "react-icons/im";
 import { TbCalendarClock } from "react-icons/tb";
 import { useEffect, useState } from "react";
 import { FaArrowDown } from "react-icons/fa";
+import { toast, ToastContainer } from "react-toastify";
 
 interface VerifyProps {
   loggedIn: boolean;
   user: {
     name: string;
+    user_id: number;
     email: string;
     phone: string;
   };
+}
+
+interface ServiceProps {
+  id: number;
+  name: string;
+  price: string;
+  duration: number;
 }
 
 interface EmployeesProps {
   id: number;
   name: string;
   phone: string;
-}
-
-interface InfoProps {
-  id: number;
-  name: string;
-  price: number;
 }
 
 interface Appointment {
@@ -44,13 +47,20 @@ export default function Scheduling() {
   const [date, setDate] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedHour, setselectedHour] = useState("");
-  const [employeeServiceData, setemployeeServiceData] = useState([]);
+  const [employeeServiceData, setemployeeServiceData] = useState(
+    [] as ServiceProps[]
+  );
   const [selectedService, setSelectedService] = useState("");
   const [hours, setHours] = useState<string[]>([]);
 
   useEffect(() => {
-    console.log(employeeServiceData);
     async function Appointment() {
+      if (employeeServiceData.length === 0) {
+        return;
+      }
+      const service: ServiceProps[] = employeeServiceData.filter(
+        (item: { name: string }) => item.name === selectedService
+      );
       const [date, month] = selectedDate.split("/");
       const inicio = new Date(`2025-${month}-${date}T08:00:00`);
       const fim = new Date(`2025-${month}-${date}T18:00:00`);
@@ -58,7 +68,10 @@ export default function Scheduling() {
       const response = await fetch("http://localhost:3000/getAppointments");
       const agendados = await response.json().then((data) =>
         data.map((hours: Appointment) => {
-          return new Date(hours.appointment_time);
+          return {
+            start: new Date(hours.appointment_time),
+            duration: service[0].duration,
+          };
         })
       );
 
@@ -73,12 +86,19 @@ export default function Scheduling() {
         return horarios;
       }
 
-      function filtrarHorariosDisponiveis(horarios: Date[], agendados: Date[]) {
+      function filtrarHorariosDisponiveis(
+        horarios: Date[],
+        agendados: { start: Date; duration: number }[]
+      ) {
         return horarios
           .filter((horario) => {
-            return !agendados.some(
-              (agendado) => agendado.getTime() === horario.getTime()
-            );
+            return !agendados.some((agendado) => {
+              const agendamentoFim = new Date(agendado.start);
+              agendamentoFim.setMinutes(
+                agendamentoFim.getMinutes() + agendado.duration
+              );
+              return horario >= agendado.start && horario < agendamentoFim;
+            });
           })
           .map((hour) => {
             const horas = String(hour.getHours()).padStart(2, "0");
@@ -156,12 +176,46 @@ export default function Scheduling() {
     getDates();
   }, []);
 
+  async function handleSchedule() {
+    if (
+      data.user.user_id &&
+      selectedService &&
+      selectedEmployee &&
+      selectedHour
+    ) {
+      const [day, month] = selectedDate.split("/");
+      const appointment_time = `2025-${month}-${day}T${selectedHour}:00`;
+      await fetch("http://localhost:3000/registerAppointment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: data.user.user_id,
+          service_id: employeeServiceData.filter(
+            (item) => item.name === selectedService
+          )[0].id,
+          employee_id: selectedEmployee,
+          appointment_time,
+        }),
+      });
+      toast.success("Agendamento Realizado com sucesso");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    } else {
+      toast.error("Preencha todos os campos.");
+      console.log("error");
+    }
+  }
+
   return (
     <>
       {!stateVerify ? (
         <div className="bg-gray-200">
           <Header />
           <div className="flex flex-col">
+            <ToastContainer autoClose={1500} />
             <div className="flex md:flex-row flex-col">
               <div className="bg-gray-200 md:w-full m-6 p-11 rounded-2xl drop-shadow-md">
                 <h2 className="font-medium text-gray-700">Realize seu</h2>
@@ -203,10 +257,10 @@ export default function Scheduling() {
                         <option value={""} disabled hidden>
                           Selecione o(s) serviços
                         </option>
-                        {employeeServiceData.map((info: InfoProps) => {
+                        {employeeServiceData.map((info: ServiceProps) => {
                           return (
                             <option key={info.id} value={info.name}>
-                              {info.name}
+                              {info.name + " R$" + info.price}
                             </option>
                           );
                         })}
@@ -288,14 +342,17 @@ export default function Scheduling() {
                       <TbCalendarClock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                     </h1>
                   </div>
-                  <button className="bg-purple-400 rounded p-5 mt-3 text-gray-200 font-medium cursor-pointer hover:bg-purple-500 transition-colors">
+                  <button
+                    onClick={handleSchedule}
+                    className="bg-purple-400 rounded p-5 mt-3 text-gray-200 font-medium cursor-pointer hover:bg-purple-500 transition-colors"
+                  >
                     Agendar
                   </button>
                 </div>
               </div>
             </div>
             {selectedDate ? (
-              <div className="bg-gray-200 m-6 p-11 rounded-2xl drop-shadow-md">
+              <div className="bg-gray-200 m-6 sm:p-11 p-5 rounded-2xl drop-shadow-md">
                 <h2 className="font-medium text-gray-700">Confira os</h2>
                 <h1 className="font-medium text-3xl text-purple-400">
                   Horários
@@ -316,7 +373,11 @@ export default function Scheduling() {
                           onClick={(e) =>
                             setselectedHour(e.currentTarget.value)
                           }
-                          className="bg-gray-300 rounded-2xl drop-shadow-md p-2 transition-all text-gray-900 hover:bg-gray-400 cursor-pointer"
+                          className={`bg-gray-300 border-2 rounded-2xl drop-shadow-md p-2 transition-all text-gray-900 hover:bg-gray-400 cursor-pointer ${
+                            hour === selectedHour
+                              ? "border-purple-400"
+                              : "border-gray-300"
+                          }`}
                         >
                           Selecionar
                         </button>
