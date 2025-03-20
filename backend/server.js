@@ -81,7 +81,28 @@ async function getServicesSpecify(id) {
 
 async function getAppointments() {
   try {
-    const res = await pool.query("SELECT * FROM appointments");
+    const res = await pool.query(`SELECT 
+    a.id AS appointment_id,
+    u.id AS user_id,
+    u.name AS user_name,
+    u.email AS user_email,
+    s.id AS service_id,
+    s.name AS service_name,
+    s.description AS service_description,
+    e.id AS employee_id,
+    e.name AS employee_name,
+    a.appointment_time,
+    a.status
+    FROM 
+    appointments a
+    JOIN 
+    users u ON a.user_id = u.id
+    JOIN 
+    services s ON a.service_id = s.id
+    JOIN 
+    employees e ON a.employee_id = e.id
+    ORDER BY 
+    a.appointment_time ASC`);
     return res.rows;
   } catch (err) {
     console.error(err);
@@ -141,14 +162,32 @@ async function registerAppointments(
   }
 }
 
+async function DeleteAppointments(id) {
+  try {
+    await pool.query(
+      `
+      DELETE FROM appointments
+      WHERE id = $1`,
+      [id]
+    );
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 app.get("/", async (req, res) => {
   res.json("API desenvolvida por Kauã Neves");
+});
+
+app.delete("/deleteAppointments/:id", async (req, res) => {
+  const { id } = req.params;
+  await DeleteAppointments(id);
+  res.status(200).json({ status: "Servico Deletado", id });
 });
 
 app.post("/getUser", async (req, res) => {
   const { email, password } = req.body;
   const user = await getUsers(email, password);
-  console.log(user.id);
   if (user) {
     const token = jwt.sign(
       {
@@ -156,6 +195,7 @@ app.post("/getUser", async (req, res) => {
         email: user.email,
         name: user.name,
         user_id: user.id,
+        isAdm: user.isAdm,
       },
       SECRET_KEY,
       { expiresIn: "1h" }
@@ -238,7 +278,7 @@ app.post("/registerAppointment", async (req, res) => {
 
 app.get("/verifyToken", (req, res, next) => {
   const token =
-    req.cookies.token || req.headers["authorization"]?.split(" ")[1]; // Cookie ou header Authorization
+    req.cookies.token || req.headers["authorization"]?.split(" ")[1];
   if (!token) {
     return res
       .status(401)
