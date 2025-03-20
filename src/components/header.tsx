@@ -7,12 +7,28 @@ import Logo from "../assets/Logo.svg";
 interface VerifyProps {
   loggedIn: boolean;
   message: string;
+  user: {
+    email: string;
+    isAdm: boolean;
+    name: string;
+    phone: string;
+    user_id: number;
+  };
 }
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [stateVerify, setStateVerify] = useState(false || true);
+  const [isAdm, setIsAdm] = useState(false);
   const navigate = useNavigate();
+
+  function handleButton() {
+    if (isAdm) {
+      navigate("/portal");
+    } else {
+      navigate("/scheduling");
+    }
+  }
 
   async function handleLogout() {
     await fetch("http://localhost:3000/logout", {
@@ -31,6 +47,9 @@ export default function Header() {
         });
         const data: VerifyProps = await response.json();
         setStateVerify(data.loggedIn);
+        if (data.user) {
+          setIsAdm(data.user.isAdm);
+        }
       }
       verifyState();
     }
@@ -68,7 +87,7 @@ export default function Header() {
           </Link>
         </li>
         <li
-          onClick={() => navigate("/scheduling")}
+          onClick={handleButton}
           className="m-4 hover:text-gray-500 content-center font-medium text-gray-900 transition cursor-pointer"
         >
           Agendamento
