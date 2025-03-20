@@ -13,6 +13,7 @@ interface VerifyProps {
   user: {
     name: string;
     user_id: number;
+    isAdm: boolean;
     email: string;
     phone: string;
   };
@@ -205,7 +206,6 @@ export default function Scheduling() {
       }, 2000);
     } else {
       toast.error("Preencha todos os campos.");
-      console.log("error");
     }
   }
 
