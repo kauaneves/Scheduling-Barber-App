@@ -126,7 +126,7 @@ export default function Header() {
               onClick={handleLogout}
               className="p-2 border-purple-400 border-2 font-medium text-gray-900 cursor-pointer"
             >
-              Logout
+              Sair
             </button>
           </div>
         )}
@@ -153,7 +153,7 @@ export default function Header() {
           onClick={handleLogout}
           className="p-2 border-purple-400 border-2 font-medium text-gray-900 cursor-pointer sm:hidden"
         >
-          Logout
+          Sair
         </button>
       )}
       {menuOpen && (
